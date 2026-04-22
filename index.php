@@ -95,7 +95,7 @@ $courses = (int) $cStmt->fetch()['c'];
       <table>
         <thead>
           <tr>
-            <th style="width: 40px"><input type="checkbox" id="select-all" class="select-all-checkbox"></th>
+            <th><input type="checkbox" id="select-all" class="select-all-checkbox"></th>
             <th>
               <a href="?<?= http_build_query(array_merge($_GET, ['sort' => 'id', 'order' => ($sortBy === 'id' ? $sortToggleOrder : 'asc')])) ?>" 
                  class="sort-link <?= $sortBy === 'id' ? 'active' : '' ?>">
@@ -154,8 +154,8 @@ $courses = (int) $cStmt->fetch()['c'];
       </table>
       
       <!-- Bulk Actions -->
-      <div class="bulk-actions" style="display: none;" id="bulk-actions">
-        <div style="padding: 1rem 1.25rem; background: var(--surface); border-top: 1px solid var(--border); display: flex; gap: 1rem; align-items: center;">
+      <div class="bulk-actions" id="bulk-actions">
+        <div>
           <span id="selected-count">0 selected</span>
           <button type="submit" class="btn btn-danger" onclick="return confirm('Delete selected students? This cannot be undone.')">🗑 Delete Selected</button>
         </div>
@@ -205,8 +205,12 @@ const selectedCountSpan = document.getElementById('selected-count');
 
 function updateBulkActions() {
   const checked = document.querySelectorAll('.student-checkbox:checked').length;
-  bulkActionsDiv.style.display = checked > 0 ? 'block' : 'none';
-  selectedCountSpan.textContent = checked + (checked === 1 ? ' selected' : ' selected');
+  if (checked > 0) {
+    bulkActionsDiv.classList.add('show');
+    selectedCountSpan.textContent = checked + (checked === 1 ? ' selected' : ' selected');
+  } else {
+    bulkActionsDiv.classList.remove('show');
+  }
 }
 
 selectAllCheckbox.addEventListener('change', function() {
