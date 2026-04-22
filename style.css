@@ -182,10 +182,23 @@ thead th {
   white-space: nowrap;
   border-bottom: 1px solid var(--border);
 }
+
+thead th:first-child {
+  width: 50px;
+  padding: 1rem .75rem;
+  text-align: center;
+}
+
 tbody tr { border-bottom: 1px solid var(--border); transition: background .15s; }
 tbody tr:last-child { border-bottom: none; }
 tbody tr:hover { background: rgba(255,255,255,.025); }
 tbody td { padding: .9rem 1.25rem; font-size: .88rem; vertical-align: middle; }
+
+tbody td:first-child {
+  padding: .9rem .75rem;
+  text-align: center;
+}
+
 td.id-cell { color: var(--muted); font-size: .78rem; }
 td.course-badge span {
   display: inline-block;
@@ -246,44 +259,93 @@ td.course-badge span {
   text-align: center;
 }
 
+@media (max-width: 768px) {
+  .search-bar {
+    flex-direction: column;
+  }
+  .search-input {
+    min-width: auto;
+  }
+  .search-bar .btn {
+    width: 100%;
+  }
+  .action-group {
+    flex-direction: column;
+  }
+  .action-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
 @media (max-width: 600px) {
   .page-title { font-size: 1.5rem; }
   .stats-row  { flex-direction: column; }
+  .pagination { gap: .3rem; }
+  .pag-btn { 
+    min-width: 28px; 
+    height: 28px; 
+    font-size: .75rem;
+    padding: 0 .4rem;
+  }
+  .bulk-actions > div {
+    flex-direction: column;
+    gap: .75rem;
+  }
+  .bulk-actions > div > button {
+    width: 100%;
+  }
+  tbody td {
+    padding: .7rem .6rem;
+    font-size: .8rem;
+  }
 }
 
 /* ── Search Bar ─────────────────────────── */
 .search-bar-container {
-  margin-bottom: 1.75rem;
+  margin-bottom: 2rem;
 }
 
 .search-bar {
   display: flex;
-  gap: .75rem;
-  flex-wrap: wrap;
+  gap: .65rem;
+  align-items: center;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: .5rem;
+  transition: border-color .2s, box-shadow .2s;
+}
+
+.search-bar:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(79,255,176,.08);
 }
 
 .search-input {
   flex: 1;
-  min-width: 200px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
+  background: transparent;
+  border: none;
   color: var(--text);
   font-family: var(--font-mono);
   font-size: .92rem;
-  padding: .75rem 1rem;
+  padding: .6rem 0.8rem;
   outline: none;
-  transition: border-color .2s, box-shadow .2s;
-}
-
-.search-input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(79,255,176,.12);
+  min-width: 200px;
 }
 
 .search-input::placeholder {
   color: var(--muted);
-  opacity: .6;
+  opacity: .5;
+}
+
+.search-bar .btn {
+  padding: .55rem 1.1rem;
+  font-size: .78rem;
+}
+
+.search-bar .btn-ghost {
+  background: rgba(255,255,255,.04);
 }
 
 /* ── Sortable Headers ───────────────────── */
@@ -291,14 +353,18 @@ td.course-badge span {
   color: var(--muted);
   text-decoration: none;
   cursor: pointer;
-  transition: color .2s;
+  transition: color .2s, background .2s;
   display: inline-flex;
   align-items: center;
-  gap: .3rem;
+  gap: .25rem;
+  padding: .2rem .4rem;
+  border-radius: 4px;
+  user-select: none;
 }
 
 .sort-link:hover {
   color: var(--accent);
+  background: rgba(79,255,176,.08);
 }
 
 .sort-link.active {
@@ -310,8 +376,13 @@ td.course-badge span {
 input[type="checkbox"] {
   cursor: pointer;
   accent-color: var(--accent);
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
+  transition: all .2s;
+}
+
+input[type="checkbox"]:hover {
+  filter: brightness(1.1);
 }
 
 /* ── Bulk Actions ───────────────────────── */
@@ -320,16 +391,49 @@ input[type="checkbox"] {
   flex-direction: column;
 }
 
-#bulk-actions {
+.bulk-actions {
   display: none;
+}
+
+.bulk-actions.show {
+  display: block;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 1rem 1.25rem;
+  border-radius: 0 0 var(--radius) var(--radius);
+  animation: slideDown .2s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.bulk-actions > div {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+#selected-count {
+  color: var(--muted);
+  font-size: .88rem;
+  font-weight: 500;
 }
 
 /* ── Pagination ─────────────────────────── */
 .pagination {
   display: flex;
-  gap: .5rem;
+  gap: .4rem;
   justify-content: center;
-  margin-top: 1.75rem;
+  margin-top: 2rem;
   flex-wrap: wrap;
 }
 
@@ -337,30 +441,31 @@ input[type="checkbox"] {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 36px;
-  height: 36px;
-  padding: 0 .75rem;
-  background: var(--card);
+  min-width: 32px;
+  height: 32px;
+  padding: 0 .6rem;
+  background: transparent;
   border: 1px solid var(--border);
   color: var(--muted);
   text-decoration: none;
   border-radius: 6px;
-  font-size: .85rem;
-  font-weight: 600;
+  font-size: .8rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: all .2s;
+  transition: all .2s ease;
 }
 
 .pag-btn:hover:not(.active) {
   border-color: var(--accent);
   color: var(--accent);
-  background: rgba(79,255,176,.08);
+  background: rgba(79,255,176,.06);
 }
 
 .pag-btn.active {
   background: var(--accent);
   color: var(--bg);
   border-color: var(--accent);
+  font-weight: 600;
 }
 
 /* ── Select Dropdown ────────────────────── */
@@ -371,4 +476,8 @@ select.form-input {
   background-position: right 1rem center;
   padding-right: 2.5rem;
   cursor: pointer;
+}
+
+#course-new {
+  margin-top: .35rem;
 }
