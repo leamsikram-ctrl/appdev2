@@ -4,25 +4,41 @@ require 'db.php';
 $success = false;
 $error   = '';
 
-// Get distinct courses for dropdown
-$coursesStmt = $pdo->query("SELECT DISTINCT course FROM students ORDER BY course");
-$courses = $coursesStmt->fetchAll(PDO::FETCH_COLUMN);
+// Get all courses from courses table
+$coursesStmt = $pdo->query("SELECT id, name FROM courses ORDER BY name");
+$courses = $coursesStmt->fetchAll();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $name   = trim($_POST['name']   ?? '');
-    $email  = trim($_POST['email']  ?? '');
-    $course = trim($_POST['course'] ?? '');
+    $name      = trim($_POST['name']   ?? '');
+    $email     = trim($_POST['email']  ?? '');
+    $courseId  = isset($_POST['course_id']) ? (int) $_POST['course_id'] : 0;
+    $courseName = trim($_POST['course_name'] ?? '');
 
     // Validate email
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = 'Please enter a valid email address.';
-    } elseif (!$name || !$email || !$course) {
+    } elseif (!$name || !$email || (!$courseId && !$courseName)) {
         $error = 'All fields are required.';
     } else {
         try {
-            $sql  = "INSERT INTO students (name, email, course) VALUES (:name, :email, :course)";
+            // If new course name provided, create it first
+            if (!$courseId && $courseName) {
+                $checkStmt = $pdo->prepare("SELECT id FROM courses WHERE name = ?");
+                $checkStmt->execute([$courseName]);
+                $existing = $checkStmt->fetch();
+                
+                if ($existing) {
+                    $courseId = $existing['id'];
+                } else {
+                    $insertStmt = $pdo->prepare("INSERT INTO courses (name) VALUES (?)");
+                    $insertStmt->execute([$courseName]);
+                    $courseId = $pdo->lastInsertId();
+                }
+            }
+            
+            $sql  = "INSERT INTO students (name, email, course_id) VALUES (:name, :email, :course_id)";
             $stmt = $pdo->prepare($sql);
-            $stmt->execute(['name' => $name, 'email' => $email, 'course' => $course]);
+            $stmt->execute(['name' => $name, 'email' => $email, 'course_id' => $courseId]);
             $success = true;
         } catch (PDOException $e) {
             $error = str_contains($e->getMessage(), 'Duplicate entry')
@@ -79,16 +95,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
       <div class="form-group">
         <label class="form-label" for="course">Course</label>
-        <select class="form-input" id="course" name="course" required>
-          <option value="">-- Select a course or enter new --</option>
+        <select class="form-input" id="course" name="course_id">
+          <option value="">-- Select a course --</option>
           <?php foreach ($courses as $c): ?>
-            <option value="<?= htmlspecialchars($c) ?>" <?= (($_POST['course'] ?? '') === $c ? 'selected' : '') ?>>
-              <?= htmlspecialchars($c) ?>
+            <option value="<?= htmlspecialchars($c['id']) ?>" <?= (($_POST['course_id'] ?? '') == $c['id'] ? 'selected' : '') ?>>
+              <?= htmlspecialchars($c['name']) ?>
             </option>
           <?php endforeach; ?>
         </select>
-        <input class="form-input" type="text" id="course-new" placeholder="Or type a new course name"
-               value="<?= !in_array(($_POST['course'] ?? ''), $courses) ? htmlspecialchars($_POST['course'] ?? '') : '' ?>">
+        <input class="form-input" type="text" id="course-new" name="course_name" 
+               placeholder="Or type a new course name"
+               value="<?= htmlspecialchars($_POST['course_name'] ?? '') ?>">
       </div>
 
       <div style="display:flex;gap:.75rem;margin-top:.5rem">

@@ -11,32 +11,35 @@ $search = isset($_GET['search']) ? trim($_GET['search']) : '';
 $searchFilter = '';
 $searchParams = [];
 if ($search) {
-    $searchFilter = " AND (name LIKE ? OR email LIKE ? OR course LIKE ?)";
+    $searchFilter = " AND (s.name LIKE ? OR s.email LIKE ? OR c.name LIKE ?)";
     $searchParams = ["%$search%", "%$search%", "%$search%"];
 }
 
 // Sort
 $validSortColumns = ['id', 'name', 'email', 'course', 'created_at'];
 $sortBy = isset($_GET['sort']) && in_array($_GET['sort'], $validSortColumns) ? $_GET['sort'] : 'created_at';
+$sortColumn = $sortBy === 'course' ? 'c.name' : "s.$sortBy";
 $sortOrder = isset($_GET['order']) && $_GET['order'] === 'asc' ? 'ASC' : 'DESC';
 $sortToggleOrder = $sortOrder === 'ASC' ? 'desc' : 'asc';
 
 // Get total count for pagination
-$countSql = "SELECT COUNT(*) as cnt FROM students WHERE 1=1" . $searchFilter;
+$countSql = "SELECT COUNT(*) as cnt FROM students s LEFT JOIN courses c ON s.course_id = c.id WHERE 1=1" . $searchFilter;
 $countStmt = $pdo->prepare($countSql);
 $countStmt->execute($searchParams);
 $totalStudents = (int) $countStmt->fetch()['cnt'];
 $totalPages = ceil($totalStudents / $perPage);
 
-// Fetch students
-$sql = "SELECT * FROM students WHERE 1=1" . $searchFilter . " ORDER BY $sortBy $sortOrder LIMIT ? OFFSET ?";
+// Fetch students with course info
+$sql = "SELECT s.*, c.name as course FROM students s 
+        LEFT JOIN courses c ON s.course_id = c.id 
+        WHERE 1=1" . $searchFilter . " ORDER BY $sortColumn $sortOrder LIMIT ? OFFSET ?";
 $stmt = $pdo->prepare($sql);
 $params = array_merge($searchParams, [$perPage, $offset]);
 $stmt->execute($params);
 $students = $stmt->fetchAll();
 
-// Count distinct courses
-$cStmt = $pdo->query("SELECT COUNT(DISTINCT course) AS c FROM students");
+// Count total courses
+$cStmt = $pdo->query("SELECT COUNT(*) AS c FROM courses");
 $courses = (int) $cStmt->fetch()['c'];
 ?>
 <!DOCTYPE html>

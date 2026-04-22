@@ -3,8 +3,9 @@ require 'db.php';
 
 $id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 
-// Fetch student
-$stmt = $pdo->prepare("SELECT * FROM students WHERE id = ?");
+// Fetch student with course info
+$stmt = $pdo->prepare("SELECT s.*, c.name as course_name FROM students s 
+                       LEFT JOIN courses c ON s.course_id = c.id WHERE s.id = ?");
 $stmt->execute([$id]);
 $student = $stmt->fetch();
 
@@ -13,26 +14,42 @@ if (!$student) {
     exit;
 }
 
-// Get distinct courses for dropdown
-$coursesStmt = $pdo->query("SELECT DISTINCT course FROM students ORDER BY course");
-$courses = $coursesStmt->fetchAll(PDO::FETCH_COLUMN);
+// Get all courses from courses table
+$coursesStmt = $pdo->query("SELECT id, name FROM courses ORDER BY name");
+$courses = $coursesStmt->fetchAll();
 
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $name   = trim($_POST['name']   ?? '');
-    $email  = trim($_POST['email']  ?? '');
-    $course = trim($_POST['course'] ?? '');
+    $name      = trim($_POST['name']   ?? '');
+    $email     = trim($_POST['email']  ?? '');
+    $courseId  = isset($_POST['course_id']) ? (int) $_POST['course_id'] : 0;
+    $courseName = trim($_POST['course_name'] ?? '');
 
     // Validate email
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = 'Please enter a valid email address.';
-    } elseif (!$name || !$email || !$course) {
+    } elseif (!$name || !$email || (!$courseId && !$courseName)) {
         $error = 'All fields are required.';
     } else {
         try {
-            $sql = "UPDATE students SET name = ?, email = ?, course = ? WHERE id = ?";
-            $pdo->prepare($sql)->execute([$name, $email, $course, $id]);
+            // If new course name provided, create it first
+            if (!$courseId && $courseName) {
+                $checkStmt = $pdo->prepare("SELECT id FROM courses WHERE name = ?");
+                $checkStmt->execute([$courseName]);
+                $existing = $checkStmt->fetch();
+                
+                if ($existing) {
+                    $courseId = $existing['id'];
+                } else {
+                    $insertStmt = $pdo->prepare("INSERT INTO courses (name) VALUES (?)");
+                    $insertStmt->execute([$courseName]);
+                    $courseId = $pdo->lastInsertId();
+                }
+            }
+            
+            $sql = "UPDATE students SET name = ?, email = ?, course_id = ? WHERE id = ?";
+            $pdo->prepare($sql)->execute([$name, $email, $courseId, $id]);
             header("Location: index.php");
             exit;
         } catch (PDOException $e) {
@@ -44,7 +61,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Re-populate with submitted values on error
     $student['name']   = $name;
     $student['email']  = $email;
-    $student['course'] = $course;
+    $student['course_id'] = $courseId;
+    $student['course_name'] = $courseName ?: $student['course_name'];
 }
 ?>
 <!DOCTYPE html>
@@ -87,16 +105,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
       <div class="form-group">
         <label class="form-label" for="course">Course</label>
-        <select class="form-input" id="course" name="course" required>
-          <option value="">-- Select a course or enter new --</option>
+        <select class="form-input" id="course" name="course_id">
+          <option value="">-- Select a course --</option>
           <?php foreach ($courses as $c): ?>
-            <option value="<?= htmlspecialchars($c) ?>" <?= ($student['course'] === $c ? 'selected' : '') ?>>
-              <?= htmlspecialchars($c) ?>
+            <option value="<?= htmlspecialchars($c['id']) ?>" <?= ($student['course_id'] == $c['id'] ? 'selected' : '') ?>>
+              <?= htmlspecialchars($c['name']) ?>
             </option>
           <?php endforeach; ?>
         </select>
-        <input class="form-input" type="text" id="course-new" placeholder="Or type a new course name"
-               value="<?= !in_array($student['course'], $courses) ? htmlspecialchars($student['course']) : '' ?>">
+        <input class="form-input" type="text" id="course-new" name="course_name" 
+               placeholder="Or type a new course name"
+               value="<?= !in_array($student['course_id'], array_column($courses, 'id')) ? htmlspecialchars($student['course_name'] ?? '') : '' ?>">
       </div>
 
       <div style="display:flex;gap:.75rem;margin-top:.5rem">
