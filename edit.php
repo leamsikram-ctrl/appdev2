@@ -13,6 +13,10 @@ if (!$student) {
     exit;
 }
 
+// Get distinct courses for dropdown
+$coursesStmt = $pdo->query("SELECT DISTINCT course FROM students ORDER BY course");
+$courses = $coursesStmt->fetchAll(PDO::FETCH_COLUMN);
+
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -20,7 +24,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email  = trim($_POST['email']  ?? '');
     $course = trim($_POST['course'] ?? '');
 
-    if ($name && $email && $course) {
+    // Validate email
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $error = 'Please enter a valid email address.';
+    } elseif (!$name || !$email || !$course) {
+        $error = 'All fields are required.';
+    } else {
         try {
             $sql = "UPDATE students SET name = ?, email = ?, course = ? WHERE id = ?";
             $pdo->prepare($sql)->execute([$name, $email, $course, $id]);
@@ -31,8 +40,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ? 'That email address is already taken.'
                 : 'Database error: ' . $e->getMessage();
         }
-    } else {
-        $error = 'All fields are required.';
     }
     // Re-populate with submitted values on error
     $student['name']   = $name;
@@ -80,8 +87,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
       <div class="form-group">
         <label class="form-label" for="course">Course</label>
-        <input class="form-input" type="text" id="course" name="course"
-               value="<?= htmlspecialchars($student['course']) ?>" required>
+        <select class="form-input" id="course" name="course" required>
+          <option value="">-- Select a course or enter new --</option>
+          <?php foreach ($courses as $c): ?>
+            <option value="<?= htmlspecialchars($c) ?>" <?= ($student['course'] === $c ? 'selected' : '') ?>>
+              <?= htmlspecialchars($c) ?>
+            </option>
+          <?php endforeach; ?>
+        </select>
+        <input class="form-input" type="text" id="course-new" placeholder="Or type a new course name"
+               value="<?= !in_array($student['course'], $courses) ? htmlspecialchars($student['course']) : '' ?>">
       </div>
 
       <div style="display:flex;gap:.75rem;margin-top:.5rem">
@@ -94,5 +109,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   <footer class="site-footer">school.db &copy; <?= date('Y') ?></footer>
 </div>
+
+<script>
+// Course dropdown/input logic
+const courseSelect = document.getElementById('course');
+const courseNewInput = document.getElementById('course-new');
+
+courseSelect.addEventListener('change', function() {
+  if (this.value) {
+    courseNewInput.value = '';
+    courseNewInput.style.display = 'none';
+  } else {
+    courseNewInput.style.display = 'block';
+  }
+});
+
+const form = document.querySelector('form');
+form.addEventListener('submit', function(e) {
+  if (!courseSelect.value && !courseNewInput.value) {
+    e.preventDefault();
+    alert('Please select or enter a course.');
+  } else if (!courseSelect.value && courseNewInput.value) {
+    courseSelect.value = courseNewInput.value;
+  }
+});
+
+// Initialize on page load
+if (courseSelect.value) {
+  courseNewInput.style.display = 'none';
+} else {
+  courseNewInput.style.display = 'block';
+}
+</script>
 </body>
 </html>

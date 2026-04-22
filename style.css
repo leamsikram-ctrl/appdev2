@@ -250,3 +250,125 @@ td.course-badge span {
   .page-title { font-size: 1.5rem; }
   .stats-row  { flex-direction: column; }
 }
+
+/* ── Search Bar ─────────────────────────── */
+.search-bar-container {
+  margin-bottom: 1.75rem;
+}
+
+.search-bar {
+  display: flex;
+  gap: .75rem;
+  flex-wrap: wrap;
+}
+
+.search-input {
+  flex: 1;
+  min-width: 200px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: .92rem;
+  padding: .75rem 1rem;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+}
+
+.search-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(79,255,176,.12);
+}
+
+.search-input::placeholder {
+  color: var(--muted);
+  opacity: .6;
+}
+
+/* ── Sortable Headers ───────────────────── */
+.sort-link {
+  color: var(--muted);
+  text-decoration: none;
+  cursor: pointer;
+  transition: color .2s;
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+}
+
+.sort-link:hover {
+  color: var(--accent);
+}
+
+.sort-link.active {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* ── Checkboxes ─────────────────────────── */
+input[type="checkbox"] {
+  cursor: pointer;
+  accent-color: var(--accent);
+  width: 18px;
+  height: 18px;
+}
+
+/* ── Bulk Actions ───────────────────────── */
+.bulk-form {
+  display: flex;
+  flex-direction: column;
+}
+
+#bulk-actions {
+  display: none;
+}
+
+/* ── Pagination ─────────────────────────── */
+.pagination {
+  display: flex;
+  gap: .5rem;
+  justify-content: center;
+  margin-top: 1.75rem;
+  flex-wrap: wrap;
+}
+
+.pag-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 .75rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  text-decoration: none;
+  border-radius: 6px;
+  font-size: .85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .2s;
+}
+
+.pag-btn:hover:not(.active) {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(79,255,176,.08);
+}
+
+.pag-btn.active {
+  background: var(--accent);
+  color: var(--bg);
+  border-color: var(--accent);
+}
+
+/* ── Select Dropdown ────────────────────── */
+select.form-input {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%237a82a8' d='M2 4l4 4 4-4z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  padding-right: 2.5rem;
+  cursor: pointer;
+}
